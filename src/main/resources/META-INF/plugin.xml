@@ -1,0 +1,15 @@
+<idea-plugin>
+    <id>co.anbora.labs.apiBlueprint.viewer</id>
+    <name>API Blueprint Viewer (Lifetime)</name>
+    <vendor email="support@anbora.co" url="https://labs.anbora.co">Anbora-labs</vendor>
+
+    <!-- Product and plugin compatibility requirements.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <!-- Extension points defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+    <extensions defaultExtensionNs="com.intellij">
+
+    </extensions>
+</idea-plugin>
