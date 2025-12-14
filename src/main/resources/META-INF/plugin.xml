@@ -6,10 +6,45 @@
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
+    <depends>org.intellij.plugins.markdown</depends>
+    <depends>co.anbora.labs.apiBlueprint</depends>
+    <depends config-file="ext-javascript.xml" optional="true">JavaScript</depends>
 
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
+        <projectConfigurable
+                groupId="tools"
+                displayName="API Blueprint"
+                id="a5f0a1a8-6600-4532-bd79-10d47d55cf11_AglioSettingsConfigurable"
+                instance="co.anbora.labs.apiblueprint.viewer.ide.settings.AglioSettingsConfigurable" />
 
+        <postStartupActivity implementation="co.anbora.labs.apiblueprint.viewer.ide.startup.SetupDiscovery"/>
+
+        <applicationService serviceImplementation="co.anbora.labs.apiblueprint.viewer.ide.toolchain.AglioKnownToolchainsState"/>
+        <applicationService serviceImplementation="co.anbora.labs.apiblueprint.viewer.ide.toolchain.AglioToolchainService"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="co.anbora.labs.apiBlueprint.viewer">
+        <toolchain implementation="co.anbora.labs.apiblueprint.viewer.ide.toolchain.flavor.AglioSysPathToolchainFlavor"/>
+        <toolchain implementation="co.anbora.labs.apiblueprint.viewer.ide.toolchain.flavor.AglioUnixWhichPathToolchain"/>
+        <toolchain implementation="co.anbora.labs.apiblueprint.viewer.ide.toolchain.flavor.AglioWinWhichPathToolchain"/>
+        <discovery implementation="co.anbora.labs.apiblueprint.viewer.ide.discovery.flavor.AglioUnixDiscovery"/>
+        <discovery implementation="co.anbora.labs.apiblueprint.viewer.ide.discovery.flavor.AglioWinDiscovery"/>
+    </extensions>
+
+    <extensionPoints>
+        <extensionPoint interface="co.anbora.labs.apiblueprint.viewer.ide.toolchain.AglioToolchainFlavor"
+                        dynamic="true" name="toolchain"/>
+        <extensionPoint interface="co.anbora.labs.apiblueprint.viewer.ide.discovery.AglioDiscoveryFlavor"
+                        dynamic="true" name="discovery"/>
+    </extensionPoints>
+
+    <extensions defaultExtensionNs="org.intellij.markdown">
+        <!-- Para agregar un preview provider personalizado -->
+<!--        <html.panel.provider implementation="com.example.MyCustomMarkdownPreviewProvider"/>-->
+
+        <!-- O para generar HTML personalizado -->
+<!--        <markdownHtmlGenerator implementation="com.example.MyCustomHtmlGenerator"/>-->
     </extensions>
 </idea-plugin>

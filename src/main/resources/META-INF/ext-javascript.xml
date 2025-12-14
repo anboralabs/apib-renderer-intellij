@@ -1,0 +1,5 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <postStartupActivity implementation="co.anbora.labs.apiblueprint.viewer.ide.startup.CheckApiBluePrintRenderer"/>
+    </extensions>
+</idea-plugin>
