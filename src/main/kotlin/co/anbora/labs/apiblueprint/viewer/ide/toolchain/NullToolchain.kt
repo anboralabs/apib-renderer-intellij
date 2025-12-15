@@ -1,7 +1,7 @@
 package co.anbora.labs.apiblueprint.viewer.ide.toolchain
 
 object NullToolchain: AglioToolchain {
-    override fun name() = ""
+    override fun name() = "<No Aglio Renderer>"
 
     override fun version() = ""
 
