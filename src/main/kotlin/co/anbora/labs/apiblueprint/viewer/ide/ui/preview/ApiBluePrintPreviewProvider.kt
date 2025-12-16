@@ -3,135 +3,97 @@ package co.anbora.labs.apiblueprint.viewer.ide.ui.preview
 import co.anbora.labs.apiblueprint.viewer.ide.settings.ConfigurationUtil
 import co.anbora.labs.apiblueprint.viewer.ide.toolchain.AglioToolchainService
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.diagnostic.Logger
-import com.intellij.util.concurrency.AppExecutorUtil
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.ui.jcef.JBCefBrowser
 import org.intellij.plugins.markdown.ui.preview.MarkdownHtmlPanel
 import org.intellij.plugins.markdown.ui.preview.MarkdownHtmlPanelProvider
-import java.security.MessageDigest
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ScheduledFuture
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
-import com.intellij.openapi.vfs.VirtualFile
 import java.io.File
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.swing.JComponent
-import javax.swing.JEditorPane
-import javax.swing.JScrollPane
-import javax.swing.event.HyperlinkEvent
 
 class ApiBluePrintPreviewProvider : MarkdownHtmlPanelProvider() {
     private val log = Logger.getInstance(ApiBluePrintPreviewProvider::class.java)
 
-    override fun createHtmlPanel(): MarkdownHtmlPanel = CachedMarkdownHtmlPanel(log)
+    override fun createHtmlPanel(): MarkdownHtmlPanel {
+        return ApiBluePrintHtmlPanel(log)
+    }
 
     override fun isAvailable(): AvailabilityInfo = AvailabilityInfo.AVAILABLE
 
-    override fun getProviderInfo(): ProviderInfo = ProviderInfo("API Blueprint Cached Preview", "org.intellij.plugins.markdown.ui.preview.jcef.JCEFHtmlPanelProvider")
+    override fun getProviderInfo(): ProviderInfo = ProviderInfo(
+        "API Blueprint Cached Preview",
+        "org.intellij.plugins.markdown.ui.preview.jcef.JCEFHtmlPanelProvider"
+    )
 }
-
-internal data class CacheKey(
-    val fileId: String?,
-    val settingsSignature: String,
-)
-
-internal data class CacheEntry(
-    val lastHash: String,
-    val lastHtml: String,
-)
 
 /**
- * Motor de caché reutilizable y testeable sin dependencias de UI.
+ * Panel que renderiza archivos .apib usando Aglio con JBCefBrowser.
  */
-internal class RenderCache {
-    private val map = ConcurrentHashMap<CacheKey, CacheEntry>()
+private class ApiBluePrintHtmlPanel(
+    private val log: Logger
+) : MarkdownHtmlPanel {
 
-    fun get(key: CacheKey): CacheEntry? = map[key]
+    // Browser JCEF para renderizar HTML
+    private val browser = JBCefBrowser()
 
-    fun put(key: CacheKey, entry: CacheEntry) {
-        map[key] = entry
-    }
+    // Estado del renderizado actual
+    private val isRendering = AtomicBoolean(false)
+    @Volatile private var currentFile: VirtualFile? = null
+    @Volatile private var lastHtml: String = ""
 
-    fun clearForSettingsSignature(signature: String) {
-        map.keys.removeIf { it.settingsSignature == signature }
-    }
-}
-
-private class CachedMarkdownHtmlPanel(private val log: Logger) : MarkdownHtmlPanel {
-    private val editor = JEditorPane("text/html", "")
-    private val component: JComponent = JScrollPane(editor)
-
-    private val cache = RenderCache()
-    @Volatile private var lastKey: CacheKey? = null
-    @Volatile private var currentCss: String? = null
-
-    private val scheduler = AppExecutorUtil.getAppScheduledExecutorService()
-    private val pendingTask = AtomicReference<ScheduledFuture<*>?>()
-
-    // Estado simple del panel
-    @Volatile private var lastRenderedHtml: String = ""
-
-    init {
-        editor.isEditable = false
-        editor.addHyperlinkListener { e ->
-            if (e.eventType == HyperlinkEvent.EventType.ACTIVATED) {
-                // Dejar que la plataforma gestione o abrir en navegador predeterminado
-                // No crítico para la prueba de caché
-            }
-        }
-    }
-
-    override fun getComponent(): JComponent = component
+    override fun getComponent(): JComponent = browser.component
 
     override fun setHtml(html: String, initialScrollOffset: Int, document: VirtualFile?) {
+        currentFile = document
+
         // Si es un archivo .apib, usar Aglio para renderizar
         if (document != null && document.extension == "apib") {
-            renderApiBlueprintFile(document)
+            renderApiBlueprintFile(document, initialScrollOffset)
             return
         }
 
-        // Para otros archivos, usar el HTML proporcionado
-        lastRenderedHtml = html
-        ApplicationManager.getApplication().invokeLater({
-            editor.text = html
-            // scroll básico por referencia si el offset es 0 se ignora; no mapeamos offset->anchor aquí
-        }, ModalityState.any())
+        // Para otros archivos, cargar HTML directamente
+        lastHtml = html
+        browser.loadHTML(html)
     }
 
-    private fun renderApiBlueprintFile(file: VirtualFile) {
+    private fun renderApiBlueprintFile(file: VirtualFile, scrollOffset: Int) {
         val toolchain = AglioToolchainService.toolchainSettings.toolchain()
 
         if (!toolchain.isValid()) {
-            val errorHtml = """
-                <html>
-                  <body>
-                    <div style='color: red; font-family: monospace; padding: 20px;'>
-                      <h3>Aglio not configured</h3>
-                      <p>Please configure Aglio toolchain in Settings > Tools > API Blueprint</p>
-                    </div>
-                  </body>
-                </html>
-            """.trimIndent()
-            lastRenderedHtml = errorHtml
-            ApplicationManager.getApplication().invokeLater({
-                editor.text = errorHtml
-            }, ModalityState.any())
+            val errorHtml = createErrorHtml(
+                "Aglio not configured",
+                "Please configure Aglio toolchain in Settings > Tools > API Blueprint"
+            )
+            lastHtml = errorHtml
+            browser.loadHTML(errorHtml)
             return
         }
 
-        // Renderizar con Aglio en background
-        ApplicationManager.getApplication().executeOnPooledThread {
-            val html = try {
-                renderWithAglio(toolchain.stdBinDir()?.toAbsolutePath().toString(), file.path)
-            } catch (e: Exception) {
-                log.warn("Failed to render with Aglio", e)
-                safeErrorHtml(e)
-            }
+        // Mostrar loading mientras se renderiza
+        if (!isRendering.getAndSet(true)) {
+            val loadingHtml = createLoadingHtml()
+            lastHtml = loadingHtml
+            browser.loadHTML(loadingHtml)
 
-            lastRenderedHtml = html
-            ApplicationManager.getApplication().invokeLater({
-                editor.text = html
-            }, ModalityState.any())
+            // Renderizar con Aglio en background
+            ApplicationManager.getApplication().executeOnPooledThread {
+                val html = try {
+                    renderWithAglio(
+                        toolchain.stdBinDir()?.toAbsolutePath().toString(),
+                        file.path
+                    )
+                } catch (e: Exception) {
+                    log.warn("Failed to render with Aglio", e)
+                    createErrorHtml("Render failed", escapeHtml(e.message ?: e.javaClass.name))
+                }
+
+                // Actualizar el browser con el HTML generado
+                isRendering.set(false)
+                lastHtml = html
+                browser.loadHTML(html)
+            }
         }
     }
 
@@ -155,90 +117,109 @@ private class CachedMarkdownHtmlPanel(private val log: Logger) : MarkdownHtmlPan
         }
     }
 
+    private fun createLoadingHtml(): String = """
+        <html>
+          <head>
+            <style>
+              body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                margin: 0;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #f5f5f5;
+              }
+              .loading-container {
+                text-align: center;
+              }
+              .spinner {
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #3498db;
+                border-radius: 50%;
+                width: 40px;
+                height: 40px;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 20px;
+              }
+              @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+              }
+              .loading-text {
+                color: #555;
+                font-size: 16px;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="loading-container">
+              <div class="spinner"></div>
+              <div class="loading-text">Rendering API Blueprint with Aglio...</div>
+            </div>
+          </body>
+        </html>
+    """.trimIndent()
+
+    private fun createErrorHtml(title: String, message: String): String = """
+        <html>
+          <head>
+            <style>
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                padding: 20px;
+                background: #fff;
+              }
+              .error-container {
+                max-width: 600px;
+                margin: 40px auto;
+                padding: 20px;
+                background: #fff3cd;
+                border: 1px solid #ffc107;
+                border-radius: 4px;
+              }
+              .error-title {
+                color: #856404;
+                font-size: 20px;
+                font-weight: 600;
+                margin: 0 0 10px 0;
+              }
+              .error-message {
+                color: #856404;
+                font-size: 14px;
+                margin: 0;
+                white-space: pre-wrap;
+              }
+            </style>
+          </head>
+          <body>
+            <div class="error-container">
+              <h3 class="error-title">$title</h3>
+              <p class="error-message">$message</p>
+            </div>
+          </body>
+        </html>
+    """.trimIndent()
+
     override fun reloadWithOffset(offset: Int) {
-        // Re-carga el último HTML conocido manteniendo offset aproximado
-        setHtml(lastRenderedHtml, offset, null as VirtualFile?)
+        // Recargar el HTML actual
+        browser.loadHTML(lastHtml)
     }
 
-    private val listeners = mutableSetOf<MarkdownHtmlPanel.ScrollListener>()
-
     override fun addScrollListener(listener: MarkdownHtmlPanel.ScrollListener) {
-        listeners.add(listener)
+        // JBCefBrowser no soporta scroll listeners directamente
+        // Este método se mantiene vacío por compatibilidad con la interfaz
     }
 
     override fun removeScrollListener(listener: MarkdownHtmlPanel.ScrollListener) {
-        listeners.remove(listener)
+        // JBCefBrowser no soporta scroll listeners directamente
+        // Este método se mantiene vacío por compatibilidad con la interfaz
     }
 
     override fun dispose() {
-        pendingTask.getAndSet(null)?.cancel(false)
-        listeners.clear()
+        browser.dispose()
     }
 
-    // API auxiliar específica para este panel
-    fun renderContent(fileId: String?, content: String, settingsSignature: String, debounceMs: Long = 75) {
-        val key = CacheKey(fileId, settingsSignature)
-        val hash = sha256("$settingsSignature:::$content")
-
-        // Hit directo
-        cache.get(key)?.takeIf { it.lastHash == hash }?.let { hit ->
-            log.debug("[MarkdownPreview] cache HIT for $key")
-            setHtml(hit.lastHtml, 0, null as VirtualFile?)
-            lastKey = key
-            return
-        }
-
-        // Debounce para ráfagas
-        pendingTask.getAndSet(null)?.cancel(false)
-        val task = scheduler.schedule({
-            val start = System.nanoTime()
-            val html = try {
-                markdownToHtml(content, settingsSignature, currentCss)
-            } catch (t: Throwable) {
-                log.warn("Markdown render failed", t)
-                safeErrorHtml(t)
-            }
-
-            val tookMs = (System.nanoTime() - start) / 1_000_000
-            log.debug("[MarkdownPreview] render MISS for $key in ${tookMs}ms")
-
-            cache.put(key, CacheEntry(hash, html))
-            lastKey = key
-            setHtml(html, 0, null as VirtualFile?)
-        }, debounceMs, TimeUnit.MILLISECONDS)
-        pendingTask.set(task)
-    }
+    private fun escapeHtml(s: String): String =
+        s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 }
-
-// ---- Helpers reutilizables/testeables ----
-internal fun sha256(text: String): String {
-    val md = MessageDigest.getInstance("SHA-256")
-    return md.digest(text.toByteArray(Charsets.UTF_8)).joinToString(separator = "") { b -> "%02x".format(b) }
-}
-
-internal fun markdownToHtml(content: String, settingsSignature: String, css: String?): String {
-    // En una implementación real, invocaríamos el renderer del plugin de Markdown y aplicaríamos CSS/settings
-    val cssBlock = css?.let { "<style>\n$it\n</style>" } ?: ""
-    return """
-        <html>
-          <head>
-            $cssBlock
-          </head>
-          <body>
-            <pre>${escapeHtml(content)}</pre>
-          </body>
-        </html>
-    """.trimIndent()
-}
-
-internal fun escapeHtml(s: String): String =
-    s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-internal fun safeErrorHtml(t: Throwable): String =
-    """
-        <html>
-          <body>
-            <div style='color: red; font-family: monospace;'>Render error: ${escapeHtml(t.message ?: t.javaClass.name)}</div>
-          </body>
-        </html>
-    """.trimIndent()
