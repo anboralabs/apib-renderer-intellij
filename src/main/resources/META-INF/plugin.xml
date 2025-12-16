@@ -41,10 +41,7 @@
     </extensionPoints>
 
     <extensions defaultExtensionNs="org.intellij.markdown">
-        <!-- Para agregar un preview provider personalizado -->
-<!--        <html.panel.provider implementation="com.example.MyCustomMarkdownPreviewProvider"/>-->
-
-        <!-- O para generar HTML personalizado -->
-<!--        <markdownHtmlGenerator implementation="com.example.MyCustomHtmlGenerator"/>-->
+        <!-- Registro del proveedor de panel HTML con caché -->
+        <html.panel.provider order="first" implementation="co.anbora.labs.apiblueprint.viewer.ide.ui.preview.ApiBluePrintPreviewProvider"/>
     </extensions>
 </idea-plugin>
