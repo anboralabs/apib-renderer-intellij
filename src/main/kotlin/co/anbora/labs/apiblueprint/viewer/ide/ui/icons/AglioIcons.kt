@@ -5,6 +5,7 @@ import javax.swing.Icon
 
 object AglioIcons {
     val AGLIO = getIcon("aglio.svg")
+    val AGLIO_40 = getIcon("aglio_40.svg")
 
     private fun getIcon(path: String): Icon {
         return IconLoader.findIcon("/icons/$path", AglioIcons::class.java.classLoader) as Icon

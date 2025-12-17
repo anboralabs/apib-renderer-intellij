@@ -6,8 +6,6 @@
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
-    <depends>org.intellij.plugins.markdown</depends>
-    <depends>co.anbora.labs.apiBlueprint</depends>
     <depends config-file="ext-javascript.xml" optional="true">JavaScript</depends>
 
     <!-- Extension points defined by the plugin.
@@ -39,9 +37,4 @@
         <extensionPoint interface="co.anbora.labs.apiblueprint.viewer.ide.discovery.AglioDiscoveryFlavor"
                         dynamic="true" name="discovery"/>
     </extensionPoints>
-
-    <extensions defaultExtensionNs="org.intellij.markdown">
-        <!-- Registro del proveedor de panel HTML con caché -->
-        <html.panel.provider order="first" implementation="co.anbora.labs.apiblueprint.viewer.ide.ui.preview.ApiBluePrintPreviewProvider"/>
-    </extensions>
 </idea-plugin>

@@ -1,0 +1,42 @@
+<html>
+<body>
+<p>
+    Reports problems that prevent rendering an API Blueprint (`.apib`) preview using the external `aglio` renderer.
+</p>
+
+<p>
+    API Blueprint Viewer relies on the `aglio` command-line tool to convert API Blueprint source into HTML for preview.
+    If `aglio` is not installed, not found on your system, or not configured in the plugin settings, rendering cannot run
+    and this inspection will highlight the issue.
+</p>
+
+<p>
+    Typical fixes:
+</p>
+<ul>
+    <li>
+        Install `aglio` (requires Node.js):
+        <pre><code>npm install -g aglio</code></pre>
+    </li>
+    <li>
+        Configure the `aglio` toolchain location in
+        <a href="settings://a5f0a1a8-6600-4532-bd79-10d47d55cf11_AglioSettingsConfigurable">Settings | Tools | API Blueprint</a>.
+    </li>
+</ul>
+
+<!-- tooltip end -->
+
+<p>
+    Notes:
+</p>
+<ul>
+    <li>
+        `aglio` is an external tool and must be available on your machine. The plugin may try to discover it from common
+        locations (e.g., system `PATH`), but you can always set the toolchain path explicitly.
+    </li>
+    <li>
+        If you change your Node.js / npm global install location, you may need to reconfigure the toolchain path.
+    </li>
+</ul>
+</body>
+</html>
