@@ -21,6 +21,8 @@
 
         <applicationService serviceImplementation="co.anbora.labs.apiblueprint.viewer.ide.toolchain.AglioKnownToolchainsState"/>
         <applicationService serviceImplementation="co.anbora.labs.apiblueprint.viewer.ide.toolchain.AglioToolchainService"/>
+
+        <notificationGroup id="3fc30685-7463-4ec0-91d4-c21567ef00e3_Aglio_Notification" displayType="STICKY_BALLOON"/>
     </extensions>
 
     <extensions defaultExtensionNs="co.anbora.labs.apiBlueprint.viewer">
