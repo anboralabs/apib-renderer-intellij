@@ -31,3 +31,5 @@ fun JTextField.addTextChangeListener(listener: (DocumentEvent) -> Unit) {
         }
     )
 }
+
+fun VirtualFile.isApiBFile(): Boolean = name.endsWith(".apib")
