@@ -1,5 +1,6 @@
 package co.anbora.labs.apiblueprint.viewer.ide.utils
 
+import co.anbora.labs.apiblueprint.ide.fileType.ApiBluePrintFileType
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.DocumentAdapter
 import java.nio.file.InvalidPathException
@@ -32,4 +33,4 @@ fun JTextField.addTextChangeListener(listener: (DocumentEvent) -> Unit) {
     )
 }
 
-fun VirtualFile.isApiBFile(): Boolean = name.endsWith(".apib")
+fun VirtualFile.isApiBFile(): Boolean = this.fileType is ApiBluePrintFileType

@@ -6,7 +6,10 @@
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
+    <depends>org.intellij.plugins.markdown</depends>
+    <depends>co.anbora.labs.apiBlueprint</depends>
     <depends config-file="ext-javascript.xml" optional="true">JavaScript</depends>
+    <resource-bundle>messages</resource-bundle>
 
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
@@ -17,12 +20,26 @@
                 id="a5f0a1a8-6600-4532-bd79-10d47d55cf11_AglioSettingsConfigurable"
                 instance="co.anbora.labs.apiblueprint.viewer.ide.settings.AglioSettingsConfigurable" />
 
+        <fileEditorProvider implementation="co.anbora.labs.apiblueprint.viewer.ide.editor.AglioEditorProvider"/>
+
+        <localInspection implementationClass="co.anbora.labs.apiblueprint.viewer.ide.inspections.PreviewRenderInspection"
+                         language="Markdown"
+                         shortName="co.anbora.labs.apiblueprint.viewer.ide.inspections.PreviewRenderInspection"
+                         id="co.anbora.labs.apiblueprint.viewer.ide.inspections.PreviewRenderInspection"
+                         level="WEAK WARNING"
+                         enabledByDefault="true"
+                         key="inspection.display.name"
+                         groupKey="inspection.display.group"/>
+
+        <externalAnnotator language="Markdown" implementationClass="co.anbora.labs.apiblueprint.viewer.ide.annotators.RenderExternalAnnotator"/>
+
         <postStartupActivity implementation="co.anbora.labs.apiblueprint.viewer.ide.startup.SetupDiscovery"/>
 
         <applicationService serviceImplementation="co.anbora.labs.apiblueprint.viewer.ide.toolchain.AglioKnownToolchainsState"/>
         <applicationService serviceImplementation="co.anbora.labs.apiblueprint.viewer.ide.toolchain.AglioToolchainService"/>
 
-        <notificationGroup id="3fc30685-7463-4ec0-91d4-c21567ef00e3_Aglio_Notification" displayType="STICKY_BALLOON"/>
+        <notificationGroup id="3fc30685-7463-4ec0-91d4-c21567ef00e3_Aglio_Notification" displayType="STICKY_BALLOON"
+                           key="notification.key"/>
     </extensions>
 
     <extensions defaultExtensionNs="co.anbora.labs.apiBlueprint.viewer">
