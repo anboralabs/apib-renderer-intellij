@@ -44,6 +44,11 @@ class ApibHtmlCache {
     fun putHtml(filePath: String, content: String, html: String) {
         val contentHash = computeHash(content)
         cache[filePath] = CacheEntry(contentHash, html)
+
+        // Notify listeners that HTML has been cached
+        ApplicationManager.getApplication().messageBus
+            .syncPublisher(ApibHtmlCacheListener.TOPIC)
+            .onHtmlCached(filePath, html)
     }
 
     /**

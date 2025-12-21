@@ -1,8 +1,9 @@
 package co.anbora.labs.apiblueprint.viewer.ide.editor
 
 import co.anbora.labs.apiblueprint.viewer.ide.index.ApibHtmlCache
+import co.anbora.labs.apiblueprint.viewer.ide.index.ApibHtmlCacheListener
 import co.anbora.labs.apiblueprint.viewer.ide.utils.isApiBFile
-import com.intellij.openapi.fileEditor.AsyncFileEditorProvider
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditor
 import com.intellij.openapi.fileEditor.FileEditorLocation
 import com.intellij.openapi.fileEditor.FileEditorPolicy
@@ -13,6 +14,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.UserDataHolderBase
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.jcef.JBCefBrowser
+import com.intellij.util.messages.MessageBusConnection
 import java.beans.PropertyChangeListener
 import javax.swing.JComponent
 
@@ -41,9 +43,23 @@ private class AglioFileEditor(
 ) : UserDataHolderBase(), FileEditor {
 
     private val browser = JBCefBrowser()
+    private val messageBusConnection: MessageBusConnection = ApplicationManager.getApplication().messageBus.connect()
 
     init {
         loadHtml()
+        setupCacheListener()
+    }
+
+    /**
+     * Sets up listener for HTML cache updates to automatically re-render the preview.
+     */
+    private fun setupCacheListener() {
+        messageBusConnection.subscribe(ApibHtmlCacheListener.TOPIC, ApibHtmlCacheListener { filePath, html ->
+            // Only re-render if the cached HTML is for this editor's file
+            if (filePath == virtualFile.path) {
+                browser.loadHTML(html)
+            }
+        })
     }
 
     private fun loadHtml() {
@@ -121,6 +137,7 @@ private class AglioFileEditor(
     override fun getCurrentLocation(): FileEditorLocation? = null
 
     override fun dispose() {
+        messageBusConnection.disconnect()
         browser.dispose()
     }
 
