@@ -63,18 +63,15 @@ private class AglioFileEditor(
     }
 
     private fun loadHtml() {
-        // Obtener el documento actual del archivo
         val document = com.intellij.openapi.fileEditor.FileDocumentManager.getInstance()
             .getDocument(virtualFile)
 
         if (document != null) {
-            // Intentar obtener el HTML desde la caché
             val htmlContent = ApibHtmlCache.getInstance().getHtml(virtualFile.path, document.text)
 
             if (htmlContent != null) {
                 browser.loadHTML(htmlContent)
             } else {
-                // Si no hay HTML en caché, mostrar mensaje de espera
                 val waitingHtml = createWaitingHtml()
                 browser.loadHTML(waitingHtml)
             }

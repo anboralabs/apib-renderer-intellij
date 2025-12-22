@@ -50,7 +50,7 @@ class ToolchainChooserComponent(
         val toolchains: LinkedHashSet<AglioToolchain> = LinkedHashSet(knownToolchainInfos)
         toolchains.add(toolchainSettings.toolchain())
         SwingHelper.updateItems(this.comboBox, toolchains.toList(), null)
-        this.comboBox.addItem(DownloadToolchain)
+        // this.comboBox.addItem(DownloadToolchain)
 
         val selected = toolchainSettings.toolchain()
 

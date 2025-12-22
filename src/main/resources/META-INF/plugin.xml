@@ -2,6 +2,8 @@
     <id>co.anbora.labs.apiBlueprint.viewer</id>
     <name>API Blueprint Viewer (Lifetime)</name>
     <vendor email="support@anbora.co" url="https://labs.anbora.co">Anbora-labs</vendor>
+    <!-- TODO reminder: update the release-date and pluginVersion on new release, but change the release-version on new year only -->
+    <product-descriptor code="PAPIBLUEVIEW" release-date="20251221" release-version="10"/>
 
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
@@ -16,7 +18,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <projectConfigurable
                 groupId="tools"
-                displayName="API Blueprint"
+                key="configurable.displayName"
                 id="a5f0a1a8-6600-4532-bd79-10d47d55cf11_AglioSettingsConfigurable"
                 instance="co.anbora.labs.apiblueprint.viewer.ide.settings.AglioSettingsConfigurable" />
 
@@ -34,6 +36,7 @@
         <externalAnnotator language="" implementationClass="co.anbora.labs.apiblueprint.viewer.ide.annotators.RenderExternalAnnotator"/>
 
         <postStartupActivity implementation="co.anbora.labs.apiblueprint.viewer.ide.startup.SetupDiscovery"/>
+        <postStartupActivity implementation="co.anbora.labs.apiblueprint.viewer.ide.startup.InitProject"/>
 
         <applicationService serviceImplementation="co.anbora.labs.apiblueprint.viewer.ide.toolchain.AglioKnownToolchainsState"/>
         <applicationService serviceImplementation="co.anbora.labs.apiblueprint.viewer.ide.toolchain.AglioToolchainService"/>
@@ -41,6 +44,11 @@
         <notificationGroup id="3fc30685-7463-4ec0-91d4-c21567ef00e3_Aglio_Notification" displayType="STICKY_BALLOON"
                            key="notification.key"/>
     </extensions>
+
+    <applicationListeners>
+        <listener class="co.anbora.labs.apiblueprint.viewer.ide.startup.LicenseAppLifecycleListener"
+                  topic="com.intellij.ide.AppLifecycleListener"/>
+    </applicationListeners>
 
     <extensions defaultExtensionNs="co.anbora.labs.apiBlueprint.viewer">
         <toolchain implementation="co.anbora.labs.apiblueprint.viewer.ide.toolchain.flavor.AglioSysPathToolchainFlavor"/>

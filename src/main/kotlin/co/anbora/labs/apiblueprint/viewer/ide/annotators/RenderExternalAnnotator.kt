@@ -57,15 +57,10 @@ class RenderExternalAnnotator: ExternalAnnotator<RenderExternalAnnotator.State, 
         val htmlContent = ApibHtmlCache.getInstance().getHtml(file.virtualFile.path, document.text)
 
         if (htmlContent == null) {
-            // Ejecutar aglio para generar el HTML
             val renderedHtml = AglioRunner.renderToHtml(file.virtualFile.path)
 
-            // Si se generó correctamente, guardar en la caché
             if (renderedHtml != null) {
                 ApibHtmlCache.getInstance().putHtml(file.virtualFile.path, document.text, renderedHtml)
-                log.info("HTML generado y guardado en caché para ${file.virtualFile.path}")
-            } else {
-                log.warn("No se pudo generar HTML con Aglio para ${file.virtualFile.path}")
             }
         }
 
