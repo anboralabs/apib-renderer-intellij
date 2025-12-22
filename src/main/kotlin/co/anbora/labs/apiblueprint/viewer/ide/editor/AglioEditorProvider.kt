@@ -2,6 +2,7 @@ package co.anbora.labs.apiblueprint.viewer.ide.editor
 
 import co.anbora.labs.apiblueprint.viewer.ide.index.ApibHtmlCache
 import co.anbora.labs.apiblueprint.viewer.ide.index.ApibHtmlCacheListener
+import co.anbora.labs.apiblueprint.viewer.ide.toolchain.AglioToolchainService.Companion.toolchainSettings
 import co.anbora.labs.apiblueprint.viewer.ide.utils.isApiBFile
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditor
@@ -24,7 +25,7 @@ class AglioEditorProvider: FileEditorProvider, DumbAware {
     override fun accept(
         project: Project,
         vFile: VirtualFile
-    ): Boolean = vFile.isApiBFile()
+    ): Boolean = vFile.isApiBFile() && toolchainSettings.toolchain().isValid()
 
     override fun createEditor(
         project: Project,
