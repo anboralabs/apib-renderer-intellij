@@ -3,13 +3,14 @@
     <name>API Blueprint Viewer (Lifetime)</name>
     <vendor email="support@anbora.co" url="https://labs.anbora.co">Anbora-labs</vendor>
     <!-- TODO reminder: update the release-date and pluginVersion on new release, but change the release-version on new year only -->
-    <product-descriptor code="PAPIBLUEVIEW" release-date="20260518" release-version="12"/>
+    <product-descriptor code="PAPIBLUEVIEW" release-date="20260906" release-version="13"/>
 
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
 <!--    <depends>org.intellij.plugins.markdown</depends>-->
 <!--    <depends>co.anbora.labs.apiBlueprint</depends>-->
+    <depends>com.intellij.modules.jcef</depends>
     <depends config-file="ext-javascript.xml" optional="true">JavaScript</depends>
     <resource-bundle>messages</resource-bundle>
 
